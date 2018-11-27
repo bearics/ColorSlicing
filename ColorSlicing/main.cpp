@@ -101,7 +101,7 @@ template<typename T> void FindRgb(T** in)
 	}
 }
 
-template<typename T> void DetectFace(T** in, T** out, Point pos, double radius)
+template<typename T> void DetectFace(T** in, T** out, T** reversOut, Point pos, double radius)
 {	// update order BGR file to RGB file.
 	RGB point{ in[pos.y][pos.x].r, in[pos.y][pos.x].g, in[pos.y][pos.x].b };
 
@@ -116,7 +116,15 @@ template<typename T> void DetectFace(T** in, T** out, Point pos, double radius)
 				{
 					memcpy(addressof(out[y][x]), pixel, sizeof(unsigned char) * 3);
 				}
-			}			
+				else
+				{
+					memcpy(addressof(reversOut[y][x]), pixel, sizeof(unsigned char) * 3);
+				}
+			}
+			else
+			{
+				memcpy(addressof(reversOut[y][x]), pixel, sizeof(unsigned char) * 3);
+			}
 		}
 	}
 }
@@ -186,17 +194,19 @@ void main()
 
 	RGB** arr2D = MemAlloc2D<RGB>(HEIGHT, WIDTH, {0,0,0});
 	RGB** faceArr2D = MemAlloc2D<RGB>(HEIGHT, WIDTH, { 0, 0, 0 });
+	RGB** removeFaceArr2D = MemAlloc2D<RGB>(HEIGHT, WIDTH, { 0, 0, 0 });
 	RGB** smoothFaceArr2D = MemAlloc2D<RGB>(HEIGHT, WIDTH, { 0, 0, 0 });
 	RGB** afterFaceArr2D = MemAlloc2D<RGB>(HEIGHT, WIDTH, {0, 0, 0});
 
 	FileRead("face.rgb", arr2D, HEIGHT, WIDTH);
 
-	DetectFace(arr2D, faceArr2D, { 189, 136 }, 56.26446841*3);
+	DetectFace(arr2D, faceArr2D, removeFaceArr2D,{ 189, 136 }, 56.26446841*3);
 	SmoothFilter(faceArr2D, smoothFaceArr2D, 7);
 	MergeFaceAndBackground(arr2D, faceArr2D, smoothFaceArr2D, afterFaceArr2D);
-
+	
+	FileWrite("ReverseFace.raw", removeFaceArr2D, HEIGHT, WIDTH);
 	FileWrite("OnlyFace.raw", faceArr2D, HEIGHT, WIDTH);
-	FileWrite("OnlySmoothFace1.raw", smoothFaceArr2D, HEIGHT, WIDTH);
-	FileWrite("AfterFace1.raw", afterFaceArr2D, HEIGHT, WIDTH);
+	FileWrite("OnlySmoothFace.raw", smoothFaceArr2D, HEIGHT, WIDTH);
+	FileWrite("AfterFace.raw", afterFaceArr2D, HEIGHT, WIDTH);
 
 }
